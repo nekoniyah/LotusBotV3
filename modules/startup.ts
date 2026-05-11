@@ -2,8 +2,13 @@ import { Client, REST, Routes } from "discord.js";
 import ModuleBuilder, { Event } from "../utils/module/ModuleBuilder";
 import chalk from "chalk";
 import { getSlashCommands } from "../utils/module/registers";
+import type db from "../utils/db";
 
 export default class StartupModule extends ModuleBuilder {
+  constructor(options: { client: Client }) {
+    super(options);
+  }
+
   @Event("clientReady")
   async setupSlashCommands(client: Client<true>) {
     console.log(

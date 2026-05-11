@@ -1,8 +1,18 @@
-import { EmbedBuilder, type CacheType, type Interaction } from "discord.js";
+import {
+  Client,
+  EmbedBuilder,
+  type CacheType,
+  type Interaction,
+} from "discord.js";
 import ModuleBuilder, { Event } from "../utils/module/ModuleBuilder";
 import { getInteractions } from "../utils/module/registers";
+import type db from "../utils/db";
 
 export default class StartupModule extends ModuleBuilder {
+  constructor(options: { client: Client }) {
+    super(options);
+  }
+
   @Event("interactionCreate")
   async onInteractionCreate(interaction: Interaction<CacheType>) {
     if (interaction.user.bot) return;

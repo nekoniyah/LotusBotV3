@@ -2,23 +2,24 @@ import type { Client, ClientEvents, SlashCommandBuilder } from "discord.js";
 import { type TemplateEventListener } from "../typers";
 import { addEvent, addSlashCommand } from "./registers";
 import type db from "../db";
+import client from "../../client";
 
 export class RegisterModule {}
 
 export default abstract class ModuleBuilder<
-  Dependencies extends { [key: string]: any } = {},
+  Dependencies extends { [key: string]: any } = {
+    client: Client;
+  },
 > {
-  constructor(
-    public options: Dependencies & { db: typeof db; client: Client },
-  ) {
+  constructor(public options: Dependencies & { client: Client }) {
     this.options = options;
   }
 }
 
 export function SlashCommand(name: string, description: string) {
   return (
-    target: any,
-    propertyKey: string,
+    _1: any,
+    _2: string,
     descriptor: TypedPropertyDescriptor<
       (...args: any[]) => SlashCommandBuilder
     >,
@@ -31,12 +32,12 @@ export function SlashCommand(name: string, description: string) {
 
 export function Event<E extends keyof ClientEvents>(event: E) {
   return (
-    target: any,
-    propertyKey: string,
+    _1: any,
+    _2: string,
     descriptor: TypedPropertyDescriptor<TemplateEventListener<E>>,
   ) => {
     const val = descriptor.value!;
-    addEvent({ name: event, exec: val });
+    client.on(event, val);
     return descriptor;
   };
 }

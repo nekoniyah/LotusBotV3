@@ -1,13 +1,6 @@
-import "dotenv/config";
-import { Client, Partials } from "discord.js";
-import loadDirectoryList from "./utils/loadDirectoryList";
 import path from "node:path";
-import type ModuleBuilder from "./utils/module/ModuleBuilder";
-
-const client = new Client({
-  intents: ["GuildMembers", "GuildPresences", "Guilds"],
-  partials: [Partials.GuildMember, Partials.Channel, Partials.User],
-});
+import client from "./client";
+import loadDirectoryList from "./utils/loadDirectoryList";
 
 (async () => {
   const modulesPath = path.join(process.cwd(), "modules");
@@ -15,7 +8,8 @@ const client = new Client({
 
   for (let key in modules) {
     for (let path of modules[key]!) {
-      await import(path);
+      const { default: cl } = await import(path);
+      new cl();
     }
   }
 
