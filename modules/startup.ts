@@ -2,7 +2,6 @@ import { Client, REST, Routes } from "discord.js";
 import ModuleBuilder, { Event } from "../utils/module/ModuleBuilder";
 import chalk from "chalk";
 import { getSlashCommands } from "../utils/module/registers";
-import type db from "../utils/db";
 
 export default class StartupModule extends ModuleBuilder {
   constructor(options: { client: Client }) {
@@ -21,12 +20,16 @@ export default class StartupModule extends ModuleBuilder {
 
     const rest = new REST().setToken(process.env.TOKEN!);
 
-    await rest.put(
+    const res = (await rest.put(
       Routes.applicationGuildCommands(
         client.application.id,
         process.env.GUILD_ID!,
       ),
       { body: getSlashCommands().map((s) => s.toJSON()) },
+    )) as any[];
+
+    console.log(
+      `${chalk.bgBlue.whiteBright("[SETUP]")} Done registering slash commands (${getSlashCommands().length}/${res.length})...`,
     );
   }
 }
