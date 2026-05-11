@@ -1,17 +1,44 @@
-import type { Client, ClientEvents, SlashCommandBuilder } from "discord.js";
+import type {
+  AnySelectMenuInteraction,
+  ButtonInteraction,
+  ChatInputCommandInteraction,
+  Client,
+  ClientEvents,
+  InteractionEditReplyOptions,
+  MessagePayload,
+  ModalSubmitInteraction,
+  SlashCommandBuilder,
+} from "discord.js";
 import { type TemplateEventListener } from "../typers";
-import { addSlashCommand } from "./registers";
+import { addInteraction, addSlashCommand } from "./registers";
 import client from "../../client";
 import path from "path";
 import { existsSync } from "fs";
 import loadDirectoryList from "../loadDirectoryList";
 
+export type AnyInter =
+  | ChatInputCommandInteraction
+  | ButtonInteraction
+  | AnySelectMenuInteraction
+  | ModalSubmitInteraction;
+
+export type TInter<IType extends AnyInter = AnyInter> = {
+  type: "button" | "command" | "select" | "modal";
+  identifier: string;
+  ephemeral?: boolean;
+  exec: (
+    interaction: IType,
+    args?: { now: number },
+  ) => Promise<string | InteractionEditReplyOptions | MessagePayload>;
+};
+
 export default abstract class ModuleBuilder {
   constructor() {
     const eventsFolder = path.join(__dirname, "events");
+    const interactionFolder = path.join(__dirname, "interactions");
 
-    if (existsSync(eventsFolder)) {
-      (async () => {
+    (async () => {
+      if (existsSync(eventsFolder)) {
         const files = await loadDirectoryList(eventsFolder, eventsFolder);
 
         for (let key in files) {
@@ -20,8 +47,35 @@ export default abstract class ModuleBuilder {
             client.on(key, exec);
           }
         }
-      })();
-    }
+      }
+
+      if (existsSync(interactionFolder)) {
+        const files = await loadDirectoryList(
+          interactionFolder,
+          interactionFolder,
+        );
+
+        for (let key in files) {
+          for (let path of files[key]!) {
+            const {
+              default: exec,
+              type,
+              identifier,
+              ephemeral,
+            } = (await import(path)) as TInter & {
+              default: TInter["exec"];
+            };
+
+            addInteraction({
+              exec,
+              type,
+              identifier,
+              ephemeral: ephemeral || false,
+            });
+          }
+        }
+      }
+    })();
   }
 }
 

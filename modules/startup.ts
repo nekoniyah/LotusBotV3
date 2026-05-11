@@ -1,5 +1,8 @@
-import { Client, REST, Routes } from "discord.js";
-import ModuleBuilder, { Event } from "../utils/module/ModuleBuilder";
+import { Client, REST, Routes, SlashCommandBuilder } from "discord.js";
+import ModuleBuilder, {
+  Event,
+  SlashCommand,
+} from "../utils/module/ModuleBuilder";
 import chalk from "chalk";
 import { getSlashCommands } from "../utils/module/registers";
 
@@ -27,5 +30,10 @@ export default class StartupModule extends ModuleBuilder {
     console.log(
       `${chalk.bgBlue.whiteBright("[SETUP]")} Done registering slash commands (${getSlashCommands().length}/${res.length})...`,
     );
+  }
+
+  @SlashCommand("ping", "Check the bot's ping")
+  ping() {
+    return new SlashCommandBuilder();
   }
 }

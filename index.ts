@@ -9,7 +9,11 @@ import loadDirectoryList from "./utils/loadDirectoryList";
   for (let key in modules) {
     for (let path of modules[key]!) {
       const { default: cl } = await import(path);
-      new cl();
+      try {
+        new cl();
+      } catch (e) {
+        console.error(e);
+      }
     }
   }
 

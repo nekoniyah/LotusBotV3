@@ -9,6 +9,7 @@ import type {
   SlashCommandBuilder,
 } from "discord.js";
 import type { TemplateEventListener } from "../typers";
+import type { TInter } from "./ModuleBuilder";
 
 let registeredSlashCommand: SlashCommandBuilder[] = [];
 
@@ -35,22 +36,6 @@ export function setEvents(s: Event[]) {
 export function addEvent(s: Event) {
   events.push(s);
 }
-
-type AnyInter =
-  | ChatInputCommandInteraction
-  | ButtonInteraction
-  | AnySelectMenuInteraction
-  | ModalSubmitInteraction;
-
-type TInter<IType extends AnyInter = AnyInter> = {
-  type?: "button" | "command" | "select" | "modal";
-  identifier: string;
-  ephemeral?: boolean;
-  exec: (
-    interaction: IType,
-    args?: { now: number },
-  ) => Promise<string | InteractionEditReplyOptions | MessagePayload>;
-};
 
 let interactions: TInter[] = [];
 
