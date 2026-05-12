@@ -41,7 +41,7 @@ export default class InteractionModule extends ModuleBuilder {
         );
 
         const res = await command.exec(interaction, { now: Date.now() }); // Special: "responses" are "returns" in the interaction functions.
-        await interaction.editReply(res);
+        if (res) await interaction.editReply(res);
       } else {
         /**
          * Instead of letting "nothing" happen, we let the user know that the command doesn't exist...

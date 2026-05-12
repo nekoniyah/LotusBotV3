@@ -11,7 +11,7 @@ export const profiles = sqliteTable("profiles", {
 
 export const quizzes = sqliteTable("quizzes", {
   question: text().notNull(),
-  options: text({ mode: "json" }).notNull(),
+  options: text({ mode: "json" }).notNull().$type<string[]>(),
   answer: text().notNull(),
 });
 
@@ -25,6 +25,12 @@ export const reactionRoles = sqliteTable("reactionRoles", {
 export const levelRoles = sqliteTable("levelRoles", {
   level: int().notNull(),
   roleId: text().notNull(),
+  multiplier: int().notNull(),
+});
+
+export const profileRoles = sqliteTable("profileRoles", {
+  roleId: text().notNull(),
+  userId: text().notNull(),
 });
 
 export const stickyRoles = sqliteTable("stickyRoles", {
@@ -45,4 +51,5 @@ export default {
   levelRoles,
   stickyRoles,
   stickyMessages,
+  profileRoles,
 };

@@ -1,14 +1,39 @@
-import { TextChannel, type Message } from "discord.js";
-import ModuleBuilder, { Event } from "../utils/module/ModuleBuilder";
+import {
+  GuildMember,
+  SlashCommandBuilder,
+  TextChannel,
+  type Message,
+} from "discord.js";
+import ModuleBuilder, {
+  Event,
+  SlashCommand,
+} from "../utils/module/ModuleBuilder";
 import db from "../utils/db";
 import schemas from "../schemas";
 import { eq } from "drizzle-orm";
 import embeds from "../utils/embeds";
 import leveling from "../settings/leveling.json";
 
-export default class StickyMessagesModule extends ModuleBuilder {
+export default class LevelingModule extends ModuleBuilder {
   constructor() {
     super(import.meta.dir);
+  }
+
+  static applyMultiplierGain(member: GuildMember, gain: number): number {
+    const levelRoles = db.select().from(schemas.levelRoles).all();
+
+    const roles = member.roles.cache;
+    let multipliers: number = 1;
+
+    for (let [id] of roles) {
+      const lvlR = levelRoles.find((l) => l.roleId === id);
+
+      if (lvlR) {
+        multipliers += lvlR.multiplier - 1;
+      }
+    }
+
+    return gain * multipliers;
   }
 
   static async getProfile(id: string) {
@@ -35,14 +60,14 @@ export default class StickyMessagesModule extends ModuleBuilder {
     id: string,
     data: Partial<typeof schemas.profiles.$inferSelect>,
   ) {
-    await StickyMessagesModule.getProfile(id);
+    await LevelingModule.getProfile(id);
 
     await db
       .update(schemas.profiles)
       .set(data)
       .where(eq(schemas.profiles.userId, id));
 
-    return StickyMessagesModule.getProfile(id);
+    return LevelingModule.getProfile(id);
   }
 
   @Event("messageCreate")
@@ -50,10 +75,11 @@ export default class StickyMessagesModule extends ModuleBuilder {
     if (message.author.bot) return;
     if (!message.guild) return;
 
-    const p = await StickyMessagesModule.getProfile(message.author.id);
+    const p = await LevelingModule.getProfile(message.author.id);
+    const member = await message.guild.members.fetch(message.author.id);
 
-    await StickyMessagesModule.updateProfile(message.author.id, {
-      money: p.money + 1,
+    await LevelingModule.updateProfile(message.author.id, {
+      money: p.money + LevelingModule.applyMultiplierGain(member, 1),
     });
   }
 
@@ -62,7 +88,7 @@ export default class StickyMessagesModule extends ModuleBuilder {
     if (message.author.bot) return;
     if (!message.guild) return;
 
-    const p = await StickyMessagesModule.getProfile(message.author.id);
+    const p = await LevelingModule.getProfile(message.author.id);
     let experienceGained = 10;
 
     if (message.content.length) {
@@ -75,7 +101,7 @@ export default class StickyMessagesModule extends ModuleBuilder {
       leveling.baseExperienceNeeded + p.level * leveling.perLevel;
 
     if (p.experience + experienceGained === expToReach) {
-      await StickyMessagesModule.updateProfile(message.author.id, {
+      await LevelingModule.updateProfile(message.author.id, {
         experience: 0,
         level: p.level + 1,
       });
@@ -84,14 +110,14 @@ export default class StickyMessagesModule extends ModuleBuilder {
     } else if (p.experience + experienceGained > expToReach) {
       const diff = p.experience + experienceGained - expToReach;
 
-      await StickyMessagesModule.updateProfile(message.author.id, {
+      await LevelingModule.updateProfile(message.author.id, {
         experience: diff,
         level: p.level + 1,
       });
 
       nextLevel = true;
     } else {
-      await StickyMessagesModule.updateProfile(message.author.id, {
+      await LevelingModule.updateProfile(message.author.id, {
         experience: p.experience + experienceGained,
       });
     }
@@ -100,7 +126,26 @@ export default class StickyMessagesModule extends ModuleBuilder {
       const channel = (await message.guild.channels.fetch(
         leveling.channelId,
       )) as TextChannel;
-      const profile = await StickyMessagesModule.getProfile(message.author.id);
+      const profile = await LevelingModule.getProfile(message.author.id);
+
+      const levelRoles = db.select().from(schemas.levelRoles).all();
+      let earnedRoles: string[] = [];
+
+      const member = await message.guild.members.fetch(message.author.id);
+
+      for (let levelRole of levelRoles) {
+        if (profile.level >= levelRole.level) {
+          const role = await message.guild.roles.fetch(levelRole.roleId);
+          if (role) {
+            earnedRoles.push(role.id);
+            await member.roles.add(role);
+          } else {
+            await db
+              .delete(schemas.levelRoles)
+              .where(eq(schemas.levelRoles.roleId, levelRole.roleId));
+          }
+        }
+      }
 
       const embed = await embeds.base();
       embed
@@ -117,5 +162,14 @@ export default class StickyMessagesModule extends ModuleBuilder {
 
       await channel.send({ embeds: [embed] });
     }
+  }
+
+  @SlashCommand("level", "Check one's level and exp")
+  command() {
+    return new SlashCommandBuilder().addUserOption((opt) =>
+      opt
+        .setName("user")
+        .setDescription("Optional user mention to check their level"),
+    );
   }
 }

@@ -8,6 +8,9 @@ import type {
   MessagePayload,
   ModalSubmitInteraction,
   SlashCommandBuilder,
+  SlashCommandOptionsOnlyBuilder,
+  SlashCommandSubcommandGroupBuilder,
+  SlashCommandSubcommandsOnlyBuilder,
 } from "discord.js";
 import { type TemplateEventListener } from "../typers";
 import { addInteraction, addSlashCommand } from "./registers";
@@ -80,13 +83,7 @@ export default abstract class ModuleBuilder {
 }
 
 export function SlashCommand(name: string, description: string) {
-  return (
-    _1: any,
-    _2: string,
-    descriptor: TypedPropertyDescriptor<
-      (...args: any[]) => SlashCommandBuilder
-    >,
-  ) => {
+  return (_1: any, _2: string, descriptor: PropertyDescriptor) => {
     const val = descriptor.value!;
     addSlashCommand(val().setName(name).setDescription(description));
     return descriptor;
