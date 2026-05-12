@@ -5,8 +5,13 @@ import ModuleBuilder, {
 } from "../utils/module/ModuleBuilder";
 import chalk from "chalk";
 import { getSlashCommands } from "../utils/module/registers";
+import API from "../api/main";
 
 export default class StartupModule extends ModuleBuilder {
+  constructor() {
+    super(import.meta.dir);
+  }
+
   @Event("clientReady")
   async setupSlashCommands(client: Client<true>) {
     console.log(
@@ -30,6 +35,8 @@ export default class StartupModule extends ModuleBuilder {
     console.log(
       `${chalk.bgBlue.whiteBright("[SETUP]")} Done registering slash commands (${getSlashCommands().length}/${res.length})...`,
     );
+
+    await API(client);
   }
 
   @SlashCommand("ping", "Check the bot's ping")

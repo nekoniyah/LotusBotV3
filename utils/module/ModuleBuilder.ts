@@ -33,9 +33,9 @@ export type TInter<IType extends AnyInter = AnyInter> = {
 };
 
 export default abstract class ModuleBuilder {
-  constructor() {
-    const eventsFolder = path.join(__dirname, "events");
-    const interactionFolder = path.join(__dirname, "interactions");
+  constructor(moduleDir: string) {
+    const eventsFolder = path.join(moduleDir, "events");
+    const interactionFolder = path.join(moduleDir, "interactions");
 
     (async () => {
       if (existsSync(eventsFolder)) {

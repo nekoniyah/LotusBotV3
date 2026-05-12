@@ -11,7 +11,6 @@ export async function renderComponentToPng(
     `${componentName}.tsx`,
   );
   let Module = (await import(componentPath)).default;
-  console.log(Module);
   const image = new ImageResponse(<Module.element {...props} />, {
     width: Module.width,
     height: Module.height,
