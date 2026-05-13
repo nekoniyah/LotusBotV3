@@ -7,8 +7,9 @@ import embeds from "../../utils/embeds";
 
 export const type = "command";
 export const identifier = "quiz";
+
 import economy from "../../settings/economy.json";
-import LevelingModule from "../leveling";
+import EconomyModule from "../economy";
 
 export default async function (interaction: ChatInputCommandInteraction) {
   if (!interaction.guild) return;
@@ -32,13 +33,13 @@ export default async function (interaction: ChatInputCommandInteraction) {
       `You already played a quiz in the last 3 hours.`,
     );
 
-    interaction.reply({ embeds: [err], flags: ["Ephemeral"] });
+    interaction.editReply({ embeds: [err] });
   } else {
     const quizzes = db.select().from(schemas.quizzes).all();
 
     if (!quizzes.length) {
       const err = await embeds.error(`No quiz has been created yet :c`);
-      interaction.reply({ embeds: [err], flags: ["Ephemeral"] });
+      interaction.editReply({ embeds: [err] });
 
       return;
     }
@@ -84,8 +85,7 @@ export default async function (interaction: ChatInputCommandInteraction) {
           .update(schemas.profiles)
           .set({
             money:
-              profile.money +
-              LevelingModule.applyMultiplierGain(member, amount),
+              profile.money + EconomyModule.applyMultiplierGain(member, amount),
           })
           .where(eq(schemas.profiles.userId, interaction.user.id));
 
@@ -99,6 +99,11 @@ export default async function (interaction: ChatInputCommandInteraction) {
         const embed = await embeds.error("Wrong! Try again in 3 hours.");
         await message.reply({ embeds: [embed] });
       }
+
+      await db
+        .update(schemas.profiles)
+        .set({ lastQuizAt: new Date(Date.now()) })
+        .where(eq(schemas.profiles.userId, interaction.user.id));
 
       collector.stop();
     });
