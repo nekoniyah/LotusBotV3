@@ -7,8 +7,8 @@ import passport from "passport";
 import passportDiscord from "passport-discord";
 import { request } from "undici";
 import cors from "cors";
+import { handler } from "../dashboard/build/handler";
 
-const discordEndpoint = "https://discord.com/api";
 export default async function API(client: Client) {
   const app = express();
 
@@ -84,6 +84,8 @@ export default async function API(client: Client) {
     const code = req.query.code;
     res.redirect(frontendRoot + "?code=" + code);
   });
+
+  app.use(handler);
 
   app.listen(process.env.PORT, () => {
     console.log(
