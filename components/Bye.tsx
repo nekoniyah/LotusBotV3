@@ -1,12 +1,5 @@
 import type { GuildMember } from "discord.js";
 
-function xcount(count: number) {
-  if (count.toString().endsWith("1")) return "st";
-  else if (count.toString().endsWith("2")) return "nd";
-  else if (count.toString().endsWith("3")) return "rd";
-  else return "th";
-}
-
 export default {
   width: 700,
   height: 300,
@@ -53,10 +46,9 @@ export default {
               flexDirection: "column",
             }}
           >
-            <h1>Welcome {options.member.user.displayName}</h1>
+            <h1>Goodbye {options.member.user.displayName}</h1>
             <p style={{ transform: "translateY(-20px)" }}>
-              You are our {options.member.guild!.memberCount}
-              {xcount(options.member.guild!.memberCount)} Sprout!
+              Maybe you weren't a great sprout...
             </p>
           </div>
         </div>
