@@ -3,20 +3,19 @@ import {
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
+  ChatInputCommandInteraction,
   ComponentType,
   GuildMember,
+  Message,
   Role,
   roleMention,
   TextChannel,
-  type ChatInputCommandInteraction,
 } from "discord.js";
 import economy from "../../settings/economy.json";
 import embeds from "../../utils/embeds";
 import db from "../../utils/db";
 import schemas from "../../schemas";
 import { eq } from "drizzle-orm";
-import path from "path";
-import { writeFileSync } from "fs";
 
 let itemInfos = [
   {
@@ -78,34 +77,34 @@ let itemInfos = [
 export const type = "command";
 export const identifier = "shop";
 
-const shop = async function (
-  interaction: ChatInputCommandInteraction,
-  i?: number,
+async function updateShopMessage(
+  trigger: ChatInputCommandInteraction | ButtonInteraction,
+  index: number = 0,
 ) {
-  if (!interaction.guild) return;
+  // 1. Get the Profile (Acknowledge this might take time)
+  const userId = trigger.user.id;
   const profile = db
     .select()
     .from(schemas.profiles)
-    .where(eq(schemas.profiles.userId, interaction.user.id))
+    .where(eq(schemas.profiles.userId, userId))
     .get();
 
   if (!profile) {
     const embed = await embeds.error(
       "It seems you haven't done anything yet, retry later.",
     );
-
-    await interaction.editReply({
-      components: [],
-      embeds: [embed],
-      content: undefined,
-    });
+    // Use the appropriate response method
+    if (trigger instanceof ChatInputCommandInteraction) {
+      await trigger.editReply({ embeds: [embed], components: [] });
+    } else {
+      await trigger.update({ embeds: [embed], components: [] });
+    }
     return;
   }
 
-  let index = i && !isNaN(i) ? i : 0;
+  const selectedItem = itemInfos[index]!;
 
-  let selectedItem = itemInfos[index]!;
-
+  // 2. Build Components
   const backButton = new ButtonBuilder()
     .setCustomId(`shop-goto-${index - 1}`)
     .setDisabled(itemInfos[index - 1] == null)
@@ -124,59 +123,72 @@ const shop = async function (
     .setEmoji("▶️")
     .setStyle(ButtonStyle.Primary);
 
-  const row = new ActionRowBuilder().setComponents(
+  const row = new ActionRowBuilder<ButtonBuilder>().setComponents(
     backButton,
     buyButton,
     nextButton,
   );
 
-  const embed = await embeds.base();
-  embed
+  const embed = (await embeds.base())
     .setTitle(`${selectedItem.name}`)
     .setDescription(selectedItem.text)
-    .setThumbnail(interaction.guild.iconURL());
+    .setThumbnail(trigger.guild!.iconURL());
 
-  const msg = await interaction.editReply({
-    embeds: [embed],
-    components: [row.toJSON()],
-  });
+  // 3. CRITICAL FIX: Use .update() for buttons, .editReply() for the slash command
+  let message: Message;
+  if (trigger instanceof ChatInputCommandInteraction) {
+    message = await trigger.editReply({
+      content: "",
+      embeds: [embed],
+      components: [row],
+    });
+  } else {
+    // This acknowledges the button click AND updates the message
+    await trigger.update({
+      embeds: [embed],
+      components: [row],
+    });
+    message = trigger.message;
+  }
 
-  const collector = msg.createMessageComponentCollector({
+  // 4. Collector logic
+  const collector = message.createMessageComponentCollector({
     componentType: ComponentType.Button,
-    filter: (i) => i.user.id === interaction.user.id,
+    filter: (btn) => btn.user.id === userId,
+    max: 1,
+    time: 60000, // Good practice to add a timeout
   });
 
   collector.on("collect", async (i) => {
     if (i.customId.startsWith("shop-goto-")) {
-      let index = parseInt(i.customId.replace("shop-goto-", ""));
-
-      i.reply({ flags: ["Ephemeral"], content: "_ _" }).then((r) => r.delete());
-      await shop(interaction, index);
+      const nextIdx = parseInt(i.customId.replace("shop-goto-", ""));
+      // Pass the NEW interaction 'i' to the next call
+      await updateShopMessage(i, nextIdx);
     } else {
-      const index = parseInt(i.customId.split("-")[1]!);
+      const idx = parseInt(i.customId.split("-")[1]!);
+      const item = itemInfos[idx]!;
 
-      if (itemInfos[index]!.id === "mute") return await muteUserRequest(i);
-      if (itemInfos[index]!.id === "echo")
-        return await giveRole(i, itemInfos[index]!.roleId!);
-      if (itemInfos[index]!.id === "devia")
-        return await giveRole(i, itemInfos[index]!.roleId!);
-      if (itemInfos[index]!.id === "violettas")
-        return await giveRole(i, itemInfos[index]!.roleId!);
-      if (itemInfos[index]!.id === "night")
-        return await giveRole(i, itemInfos[index]!.roleId!);
-      if (itemInfos[index]!.id === "radiant")
-        return await giveRole(i, itemInfos[index]!.roleId!);
-      if (itemInfos[index]!.id === "crystal")
-        return await giveRole(i, itemInfos[index]!.roleId!);
+      // Handle specific item logic
+      if (item.id === "mute") return await muteUserRequest(i);
 
+      // For roles, use the roleId (check your object keys, one had a lowercase 'id')
+      if (item.roleId) return await giveRole(i, item.roleId);
+
+      // Default buy logic
       await db
         .update(schemas.profiles)
-        .set({ money: profile.money - itemInfos[index]!.cost })
-        .where(eq(schemas.profiles.userId, interaction.user.id));
+        .set({ money: profile.money - item.cost })
+        .where(eq(schemas.profiles.userId, userId));
 
-      await shop(interaction, index);
+      await updateShopMessage(i, idx);
     }
   });
+}
+
+// Initial command entry point
+export const shop = async function (interaction: ChatInputCommandInteraction) {
+  if (!interaction.guild) return;
+  await updateShopMessage(interaction, 0);
 };
 
 async function muteUserRequest(interaction: ButtonInteraction) {

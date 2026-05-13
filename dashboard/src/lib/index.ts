@@ -2,6 +2,6 @@
 
 import { writable } from 'svelte/store';
 
-export const root = 'http://localhost:3000';
+export const root = process.env.APP_ROOT!;
 export const token = writable<string | null>(null);
 export const authorized = writable<boolean>(false);
