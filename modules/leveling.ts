@@ -19,23 +19,6 @@ export default class LevelingModule extends ModuleBuilder {
     super(import.meta.dir);
   }
 
-  static applyMultiplierGain(member: GuildMember, gain: number): number {
-    const levelRoles = db.select().from(schemas.levelRoles).all();
-
-    const roles = member.roles.cache;
-    let multipliers: number = 1;
-
-    for (let [id] of roles) {
-      const lvlR = levelRoles.find((l) => l.roleId === id);
-
-      if (lvlR) {
-        multipliers += lvlR.multiplier - 1;
-      }
-    }
-
-    return gain * multipliers;
-  }
-
   static async getProfile(id: string) {
     let p = db
       .select()
@@ -68,19 +51,6 @@ export default class LevelingModule extends ModuleBuilder {
       .where(eq(schemas.profiles.userId, id));
 
     return LevelingModule.getProfile(id);
-  }
-
-  @Event("messageCreate")
-  async LotusBuckPerMessage(message: Message) {
-    if (message.author.bot) return;
-    if (!message.guild) return;
-
-    const p = await LevelingModule.getProfile(message.author.id);
-    const member = await message.guild.members.fetch(message.author.id);
-
-    await LevelingModule.updateProfile(message.author.id, {
-      money: p.money + LevelingModule.applyMultiplierGain(member, 1),
-    });
   }
 
   @Event("messageCreate")
