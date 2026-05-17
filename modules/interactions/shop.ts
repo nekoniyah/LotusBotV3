@@ -4,18 +4,22 @@ import {
   ButtonInteraction,
   ButtonStyle,
   ChatInputCommandInteraction,
+  Colors,
   ComponentType,
   GuildMember,
   Message,
+  ModalBuilder,
   Role,
   roleMention,
   TextChannel,
+  User,
 } from "discord.js";
 import economy from "../../settings/economy.json";
 import embeds from "../../utils/embeds";
 import db from "../../utils/db";
 import schemas from "../../schemas";
 import { eq } from "drizzle-orm";
+import mod from "../../settings/mod.json";
 
 let itemInfos = [
   {
@@ -71,6 +75,12 @@ let itemInfos = [
     id: "forum",
     text: "Unlocks forum channels to make one post in one of them.",
     cost: 1000,
+  },
+  {
+    name: "Custom Role",
+    id: "custom",
+    text: "With custom name and color",
+    cost: 6000,
   },
 ];
 
@@ -168,17 +178,32 @@ async function updateShopMessage(
       const idx = parseInt(i.customId.split("-")[1]!);
       const item = itemInfos[idx]!;
 
+      let res = false;
       // Handle specific item logic
-      if (item.id === "mute") return await muteUserRequest(i);
+      if (item.id === "mute") {
+        res = await muteUserRequest(i);
+      }
 
       // For roles, use the roleId (check your object keys, one had a lowercase 'id')
-      if (item.roleId) return await giveRole(i, item.roleId);
+      if (item.roleId) {
+        res = await giveRole(i, item.roleId);
+      }
 
-      // Default buy logic
-      await db
-        .update(schemas.profiles)
-        .set({ money: profile.money - item.cost })
-        .where(eq(schemas.profiles.userId, userId));
+      if (item.id === "custom") {
+        res = await customRole(i);
+      }
+
+      if (item.id === "forum") {
+        res = await forum(i);
+      }
+
+      if (res) {
+        // Default buy logic
+        await db
+          .update(schemas.profiles)
+          .set({ money: profile.money - item.cost })
+          .where(eq(schemas.profiles.userId, userId));
+      }
 
       await updateShopMessage(i, idx);
     }
@@ -227,6 +252,8 @@ async function muteUserRequest(interaction: ButtonInteraction) {
 
     await msg.delete();
   });
+
+  return true;
 }
 
 async function giveRole(interaction: ButtonInteraction, roleId: string) {
@@ -241,6 +268,112 @@ async function giveRole(interaction: ButtonInteraction, roleId: string) {
     ],
     allowedMentions: { parse: [] },
   });
+
+  return true;
+}
+
+async function prompt(channel: TextChannel, user: User): Promise<Message> {
+  return new Promise(async (resolve, reject) => {
+    const msg = await channel.awaitMessages({
+      max: 1,
+      filter: (m) => m.author.id === user.id,
+    });
+
+    resolve(msg.first()!);
+  });
+}
+
+async function customRole(interaction: ButtonInteraction) {
+  if (!interaction.guild) return false;
+
+  await interaction.reply({
+    flags: ["Ephemeral"],
+    content: "Please write down the name of your custom role below.",
+  });
+
+  const namePrompt = await prompt(
+    interaction.channel as TextChannel,
+    interaction.user,
+  )!;
+
+  const chosenName = namePrompt.content;
+
+  await namePrompt.delete();
+
+  const colorList = Object.keys(Colors);
+
+  await interaction.editReply({
+    content: `Now, please choose one color among these and send it below:\n
+    ${colorList.map((c) => `- ${c}`).join("\n")}`,
+  });
+
+  const colorPrompt = await prompt(
+    interaction.channel as TextChannel,
+    interaction.user,
+  );
+
+  const chosenColor = colorPrompt.content;
+
+  if (!colorList.includes(chosenColor)) {
+    await interaction.editReply({
+      content: "Please retry, the color isn't valid.",
+    });
+    return false;
+  }
+
+  const role = await interaction.guild.roles.create({
+    colors: { primaryColor: chosenColor as keyof typeof Colors },
+    name: chosenName,
+  });
+
+  const member = await interaction.guild.members.fetch(interaction.user.id);
+
+  await member.roles.add(role);
+
+  const logsChannel = (await interaction.guild.channels.fetch(
+    mod.logsChannelId,
+  )) as TextChannel;
+
+  const embed = await embeds.base();
+  embed
+    .setTitle(`Member bought a custom role`)
+    .setFields({ name: "Role", value: `${roleMention(role.id)}` })
+    .setThumbnail(member.user.displayAvatarURL());
+
+  await logsChannel.send({ embeds: [embed] });
+
+  return true;
+}
+
+async function forum(interaction: ButtonInteraction) {
+  if (!interaction.guild) return false;
+
+  const channels = await interaction.guild.channels.fetch();
+  const access = await db
+    .select()
+    .from(schemas.forumAccesses)
+    .where(eq(schemas.forumAccesses.userId, interaction.user.id))
+    .get();
+
+  if (access) return false;
+
+  await db.insert(schemas.forumAccesses).values({
+    userId: interaction.user.id,
+  });
+
+  channels.forEach(async (channel) => {
+    if (!channel) return;
+    const ch = await channel.fetch();
+
+    if (ch.isThreadOnly()) {
+      await ch.permissionOverwrites.edit(interaction.user.id, {
+        CreatePublicThreads: true,
+        CreatePrivateThreads: true,
+      });
+    }
+  });
+
+  return true;
 }
 
 export default shop;

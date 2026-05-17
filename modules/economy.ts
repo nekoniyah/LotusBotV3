@@ -87,4 +87,30 @@ export default class EconomyModule extends ModuleBuilder {
   walletCommand() {
     return new SlashCommandBuilder();
   }
+
+  @SlashCommand("bank", "Deposit Money at your bank")
+  bankCommand() {
+    return new SlashCommandBuilder()
+      .addStringOption((opt) =>
+        opt
+          .setName("action")
+          .setDescription("Action to do")
+          .setRequired(true)
+          .addChoices(
+            { name: "Deposit", value: "deposit" },
+            { name: "Withdraw", value: "withdraw" },
+            { name: "Balance", value: "balance" },
+          ),
+      )
+      .addNumberOption((opt) =>
+        opt.setName("amount").setDescription("Amount to deposit/withdraw"),
+      );
+  }
+
+  @SlashCommand("rob", "Rob a member")
+  robCommand() {
+    return new SlashCommandBuilder().addUserOption((opt) =>
+      opt.setName("user").setDescription("User to rob").setRequired(true),
+    );
+  }
 }

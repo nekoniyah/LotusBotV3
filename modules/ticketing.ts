@@ -12,13 +12,7 @@ import {
 } from "discord.js";
 import ModuleBuilder, { Event } from "../utils/module/ModuleBuilder";
 import embeds from "../utils/embeds";
-import {
-  createReadStream,
-  createWriteStream,
-  rmSync,
-  writeFile,
-  writeFileSync,
-} from "node:fs";
+import { createReadStream, writeFile, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import mod from "../settings/mod.json";

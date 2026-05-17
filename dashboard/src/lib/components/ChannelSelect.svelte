@@ -12,64 +12,67 @@
 	});
 </script>
 
-<select bind:value={channelId} id="channel" name="channel">
-	<option value="">Please select a channel</option>
-	{#each channels as channel}
-		{#if channel.type === 0}
-			<option value={channel.id} id="opt">
-				<span>#</span>
-				<p>{channel.name}</p>
-			</option>
-		{/if}
-	{/each}
-</select>
+<div class="channel-select-wrapper">
+	<i class="fa-solid fa-hashtag channel-icon"></i>
+	<select bind:value={channelId} id="channel" name="channel">
+		<option value="">Select a channel...</option>
+		{#each channels as channel}
+			{#if channel.type === 0}
+				<option value={channel.id}>
+					{channel.name}
+				</option>
+			{/if}
+		{/each}
+	</select>
+</div>
 
 <style lang="scss">
+	.channel-select-wrapper {
+		position: relative;
+		width: 100%;
+	}
+
+	.channel-icon {
+		position: absolute;
+		left: 16px;
+		top: 50%;
+		transform: translateY(-50%);
+		color: #667eea;
+		font-size: 1rem;
+		pointer-events: none;
+		z-index: 1;
+	}
+
 	select {
-		border: none;
-		outline: none;
-		background-color: rgb(32, 59, 90);
-		width: 280px;
-		height: 40px;
-		padding: 10px;
-		padding-left: 40px;
-		border-radius: 15px;
-		color: white;
-		font-family: sans-serif;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	select::picker-icon {
-		color: #999999;
-		transition: 0.4s rotate;
-	}
-
-	select,
-	::picker(select) {
-		appearance: base-select;
-		border-radius: 15px;
-	}
-
-	option:first-of-type {
-		border-radius: 8px 8px 0 0;
-	}
-
-	option:last-of-type {
-		border-radius: 0 0 8px 8px;
-	}
-
-	::picker(select) {
+		width: 100%;
+		padding: 14px 18px 14px 44px;
+		border: 2px solid #2d2d44;
 		border-radius: 8px;
+		background-color: #16213e;
+		color: #eaeaea;
+		font-size: 1rem;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		outline: none;
+		appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 16px center;
+		padding-right: 40px;
 	}
 
-	option:not(option:last-of-type) {
-		border-bottom: none;
+	select:focus {
+		border-color: #667eea;
+		box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 	}
 
-	option:hover,
-	option:focus {
-		background-color: rgba(32, 59, 90, 0.3);
+	select:hover {
+		border-color: #4a5568;
+	}
+
+	select option {
+		background-color: #16213e;
+		color: #eaeaea;
+		padding: 12px;
 	}
 </style>

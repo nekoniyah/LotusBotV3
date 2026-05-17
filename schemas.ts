@@ -1,5 +1,4 @@
 import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { defineRelations } from "drizzle-orm";
 
 export const profiles = sqliteTable("profiles", {
   userId: text().notNull(),
@@ -7,6 +6,17 @@ export const profiles = sqliteTable("profiles", {
   experience: int().default(0).notNull(),
   lastQuizAt: int({ mode: "timestamp" }),
   money: int().default(0).notNull(),
+  bank: int().default(0).notNull(),
+});
+
+export const forumAccesses = sqliteTable("forumAccesses", {
+  userId: text().notNull(),
+});
+
+export const warns = sqliteTable("warns", {
+  userId: text().notNull(),
+  reason: text(),
+  moderatorId: text().notNull(),
 });
 
 export const quizzes = sqliteTable("quizzes", {
@@ -52,4 +62,6 @@ export default {
   stickyRoles,
   stickyMessages,
   profileRoles,
+  warns,
+  forumAccesses,
 };

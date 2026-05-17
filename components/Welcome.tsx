@@ -14,12 +14,13 @@ export default {
     return (
       <div style={{ display: "contents" }}>
         <img
-          src="https://i.imgur.com/dRnQJSe.jpeg"
+          src="https://iili.io/BmxhmHG.md.jpg"
           style={{
             position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
+            width: "100%",
           }}
           alt=""
         />
