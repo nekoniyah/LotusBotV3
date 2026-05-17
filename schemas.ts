@@ -9,6 +9,13 @@ export const profiles = sqliteTable("profiles", {
   bank: int().default(0).notNull(),
 });
 
+export const rpgStats = sqliteTable("rpgStats", {
+  userId: text().notNull(),
+  bonusHealth: int().default(100).notNull(),
+  // Attack damage is deduced from the level of the user, so we don't need to store it
+  // Base health too
+});
+
 export const forumAccesses = sqliteTable("forumAccesses", {
   userId: text().notNull(),
 });
@@ -64,4 +71,5 @@ export default {
   profileRoles,
   warns,
   forumAccesses,
+  rpgStats,
 };

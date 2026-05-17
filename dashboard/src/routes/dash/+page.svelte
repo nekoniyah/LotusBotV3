@@ -49,6 +49,19 @@
 				<i class="fa-solid fa-arrow-right"></i>
 			</div>
 		</a>
+
+		<a href="/dash/stickyroles" class="feature-card">
+			<div class="card-icon stickyroles">
+				<i class="fa-solid fa-magnet"></i>
+			</div>
+			<div class="card-content">
+				<h2>Sticky Roles</h2>
+				<p>Configure roles that persist when members leave and rejoin the server</p>
+			</div>
+			<div class="card-arrow">
+				<i class="fa-solid fa-arrow-right"></i>
+			</div>
+		</a>
 	</div>
 
 	<div class="stats-section">
@@ -171,6 +184,10 @@
 
 		&.levelroles {
 			background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
+		}
+
+		&.stickyroles {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 		}
 	}
 

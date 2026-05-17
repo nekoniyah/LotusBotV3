@@ -89,6 +89,20 @@
 					</button>
 				</li>
 			</ul>
+
+			<span class="nav-label" style="margin-top: 1.5rem;">Moderation</span>
+			<ul class="nav-list">
+				<li>
+					<button 
+						class="nav-item"
+						class:active={isActive('/dash/stickyroles')}
+						onclick={() => navigate('/dash/stickyroles')}
+					>
+						<i class="fa-solid fa-magnet"></i>
+						<span>Sticky Roles</span>
+					</button>
+				</li>
+			</ul>
 		</div>
 
 		<div class="sidebar-footer">
