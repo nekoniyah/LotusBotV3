@@ -62,6 +62,19 @@
 				<i class="fa-solid fa-arrow-right"></i>
 			</div>
 		</a>
+
+		<a href="/dash/boss" class="feature-card">
+			<div class="card-icon boss">
+				<i class="fa-solid fa-skull-crossbones"></i>
+			</div>
+			<div class="card-content">
+				<h2>Boss Config</h2>
+				<p>Configure boss fight spawn thresholds and increment values for the RPG system</p>
+			</div>
+			<div class="card-arrow">
+				<i class="fa-solid fa-arrow-right"></i>
+			</div>
+		</a>
 	</div>
 
 	<div class="stats-section">
@@ -188,6 +201,10 @@
 
 		&.stickyroles {
 			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		}
+
+		&.boss {
+			background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
 		}
 	}
 

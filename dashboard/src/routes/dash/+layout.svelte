@@ -103,6 +103,20 @@
 					</button>
 				</li>
 			</ul>
+
+			<span class="nav-label" style="margin-top: 1.5rem;">RPG</span>
+			<ul class="nav-list">
+				<li>
+					<button 
+						class="nav-item"
+						class:active={isActive('/dash/boss')}
+						onclick={() => navigate('/dash/boss')}
+					>
+						<i class="fa-solid fa-skull-crossbones"></i>
+						<span>Boss Config</span>
+					</button>
+				</li>
+			</ul>
 		</div>
 
 		<div class="sidebar-footer">
