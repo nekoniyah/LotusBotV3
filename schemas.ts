@@ -14,6 +14,7 @@ export const rpgStats = sqliteTable("rpgStats", {
   bonusHealth: int().default(100).notNull(),
   // Attack damage is deduced from the level of the user, so we don't need to store it
   // Base health too
+  bonusAttack: int().default(0).notNull(),
 });
 
 export const forumAccesses = sqliteTable("forumAccesses", {

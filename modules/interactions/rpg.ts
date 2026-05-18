@@ -17,6 +17,15 @@ export const buyableStats = [
     increment: 20,
     emoji: "❤️",
   },
+  {
+    name: "Attack",
+    id: "attack",
+    text: "Increases your attack damage by 5 points.",
+    cost: 100,
+    max: 1000,
+    increment: 5,
+    emoji: "⚔️",
+  },
 ];
 
 export default async function execute(
@@ -47,6 +56,11 @@ export default async function execute(
       {
         name: "Bonus Health",
         value: `${userStats?.bonusHealth ?? 0} ❤️`,
+        inline: true,
+      },
+      {
+        name: "Bonus Attack",
+        value: `${userStats?.bonusAttack ?? 0} ⚔️`,
         inline: true,
       },
       { name: "Attack Damage", value: `${attackDamage} ⚔️`, inline: true },
@@ -120,6 +134,51 @@ export default async function execute(
           "You don't have enough coins to buy this stat.",
         );
       }
+
+      const existingStats = await db
+        .select()
+        .from(schemas.rpgStats)
+        .where(eq(schemas.rpgStats.userId, interaction.user.id))
+        .get();
+
+      if (stat.id === "attack") {
+        const currentBonusAttack = userStats?.bonusAttack ?? 0;
+        if (currentBonusAttack >= stat.max) {
+          return interaction.followUp(
+            "You have already reached the maximum bonus attack.",
+          );
+        }
+
+        const newBonusAttack = Math.min(
+          currentBonusAttack + stat.increment,
+          stat.max,
+        );
+
+        if (existingStats) {
+          await db
+            .update(schemas.rpgStats)
+            .set({ bonusAttack: newBonusAttack })
+            .where(eq(schemas.rpgStats.userId, interaction.user.id));
+        } else {
+          await db.insert(schemas.rpgStats).values({
+            userId: interaction.user.id,
+            bonusAttack: newBonusAttack,
+          });
+        }
+
+        // Remove the cost from the user's profile
+
+        await db
+          .update(schemas.profiles)
+          .set({ money: (profile?.money ?? 0) - stat.cost })
+          .where(eq(schemas.profiles.userId, interaction.user.id));
+
+        await interaction.followUp(
+          `You bought ${stat.emoji} **${stat.name}** for ${stat.cost} coins! Your bonus attack is now ${newBonusAttack} ⚔️.`,
+        );
+        return;
+      }
+
       if (stat.id === "health") {
         const currentBonusHealth = userStats?.bonusHealth ?? 0;
         if (currentBonusHealth >= stat.max) {
@@ -131,12 +190,6 @@ export default async function execute(
           currentBonusHealth + stat.increment,
           stat.max,
         );
-
-        const existingStats = await db
-          .select()
-          .from(schemas.rpgStats)
-          .where(eq(schemas.rpgStats.userId, interaction.user.id))
-          .get();
 
         if (existingStats) {
           await db

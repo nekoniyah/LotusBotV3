@@ -164,7 +164,7 @@ export default class RPGModule extends ModuleBuilder {
     if (!p) {
       const health = 100 + 20 * (profile?.level ?? 0 + 1);
       const attackDamage = 2 + 5 * (profile?.level ?? 0);
-      const bonusHealth = await db
+      const stats = await db
         .select()
         .from(schemas.rpgStats)
         .where(eq(schemas.rpgStats.userId, userId))
@@ -172,8 +172,8 @@ export default class RPGModule extends ModuleBuilder {
 
       p = addPlayerStats(
         userId,
-        health + (bonusHealth?.bonusHealth ?? 0),
-        attackDamage,
+        health + (stats?.bonusHealth ?? 0),
+        attackDamage + (stats?.bonusAttack ?? 0),
       );
     }
 
